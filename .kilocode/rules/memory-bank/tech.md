@@ -39,3 +39,9 @@
 - **Database**: Prisma for schema and queries
 - **Code Organization**: Separate components, styles, and pages
 - **Internationalization**: next-intl for multi-language support
+
+## Branch Management
+- **Main Branch**: Contains only stable, production-ready code with full test coverage, successful testing, and no security vulnerabilities. All merges to main require passing CI/CD checks including comprehensive tests and security scans.
+- **Dev Branch**: Serves as the integration branch for ongoing development work. Contains improvements and features that are tested but may not yet meet production stability requirements.
+- **Feature Branches**: Used for individual feature development and bug fixes. All changes must be thoroughly tested locally before merging into dev. Feature branches should be short-lived and regularly synced with dev to avoid conflicts.
+- **Workflow**: Feature branches → dev (with PR reviews) → main (only after full validation). Automated checks ensure code quality, coverage, and security before any merge to main.
