@@ -44,6 +44,6 @@ describe('SearchBar', () => {
 
     const searchButton = screen.getByText('Search Hostels');
     expect(searchButton).toBeInTheDocument();
-    expect(searchButton).toHaveClass('bg-blue-600');
+    expect(searchButton).toHaveClass('bg-brand-600');
   });
 });
