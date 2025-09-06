@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  GUEST
+  HOST
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(GUEST)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  properties Property[]
+  bookings   Booking[]
+  reviews    Review[]
+}
+
+model Location {
+  id       String @id @default(cuid())
+  city     String
+  region   String
+  country  String @default("Portugal")
+  latitude  Float?
+  longitude Float?
+
+  properties Property[]
+}
+
+model Property {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  address     String
+  locationId  String
+  location    Location @relation(fields: [locationId], references: [id])
+  hostId      String
+  host        User     @relation(fields: [hostId], references: [id])
+  rooms       Room[]
+  images      Image[]
+  amenities   Amenity[]
+  reviews     Review[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Room {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  capacity    Int
+  price       Float
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  bookings    Booking[]
+  images      Image[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  guestId   String
+  guest     User     @relation(fields: [guestId], references: [id])
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id])
+  checkIn   DateTime
+  checkOut  DateTime
+  status    BookingStatus @default(PENDING)
+  totalPrice Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  propertyId String
+  property  Property @relation(fields: [propertyId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Amenity {
+  id   String @id @default(cuid())
+  name String @unique
+  properties Property[]
+}
+
+model Image {
+  id         String   @id @default(cuid())
+  url        String
+  alt        String?
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+  roomId     String?
+  room       Room?     @relation(fields: [roomId], references: [id])
+  createdAt  DateTime @default(now())
+}
