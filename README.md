@@ -1,21 +1,28 @@
-# Portugal Hostel Booking Platform - Minimal MVP
+# Portugal Hostel Booking Platform - MVP
 
 A **minimal viable product (MVP)** for a hostel booking platform focused on Portugal, built with modern web technologies for streamlined hostel management and room inventory.
 
-## 🎯 What Was Built
+## 🎯 Current Status (Holiday Week Sprint)
+
+### **✅ Completed Features**
+- **Admin Room Management**: Complete CRUD interface for room inventory
+- **Public Room Display**: Responsive listing with availability information
+- **Availability System**: 7-day mock availability bars with booking percentages
+- **Demo Mode Support**: Preview deployment compatibility
+- **Responsive Design**: Mobile-first with Tailwind CSS
 
 ### **Core Architecture**
 - **Frontend**: Next.js 14 (App Router) with React 18
 - **Backend**: Next.js API routes with Prisma ORM
 - **Database**: SQLite (development) with PostgreSQL migration path
-- **Styling**: Tailwind CSS v3.4.0 (minimal implementation)
+- **Styling**: Tailwind CSS v3.4.0
 - **Authentication**: JWT-based with middleware protection
 
 ### **Key Features**
-- ✅ **Property Management**: Create and manage hostel properties
-- ✅ **Room Inventory**: Add/edit/delete room types with bed counts
-- ✅ **Admin Dashboard**: Simple room management interface
-- ✅ **Authentication**: Login/logout with protected routes
+- ✅ **Room Management**: Add/edit/delete room types with bed counts and bathroom options
+- ✅ **Admin Dashboard**: Complete room management interface at `/admin`
+- ✅ **Public Interface**: Room listing with availability at `/rooms`
+- ✅ **Availability Display**: Visual progress bars showing room availability
 - ✅ **API Layer**: RESTful endpoints for properties and rooms
 - ✅ **Responsive Design**: Mobile-first with Tailwind CSS
 
@@ -27,6 +34,290 @@ A **minimal viable product (MVP)** for a hostel booking platform focused on Port
 - ⚠️ **Demo Mode**: Changes may not persist in preview environments
 
 ---
+
+## 🚀 **Operating the Application**
+
+### **Quick Start Guide**
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Set up database
+npx prisma generate
+npx prisma db push
+
+# 3. Start development server
+npm run dev
+```
+
+Visit **http://localhost:3000** to access the application.
+
+### **User Roles & Access**
+
+#### **For Hostel Owners (Admin)**
+1. **Access Admin Interface**: Navigate to `/admin`
+2. **Create Rooms**: Use the room creation form to add new room types
+3. **Manage Inventory**: View all rooms and delete unwanted ones
+4. **Monitor Availability**: Check room availability status
+
+#### **For Guests (Public)**
+1. **Browse Rooms**: Visit `/rooms` to see available room types
+2. **Check Availability**: View availability bars and free bed counts
+3. **Room Details**: See room specifications (beds, bathroom type)
+
+---
+
+## 📋 **Step-by-Step Operating Instructions**
+
+### **1. Admin Room Management**
+
+#### **Adding New Rooms**
+1. Navigate to `/admin` in your browser
+2. Fill out the "Add New Room" form:
+   - **Room Name**: Enter a descriptive name (2-60 characters)
+     - Examples: "6-Bed Mixed Dorm", "Private Double Room", "Female Dorm"
+   - **Total Beds**: Select number of beds (1-24)
+   - **Bathroom**: Check for private bathroom, uncheck for shared
+3. Click **"Create Room"** button
+4. Room appears in the "Current Rooms" list below
+
+#### **Viewing Room Inventory**
+- **Room List**: Shows all created rooms with details
+- **Room Details**: Name, bed count, bathroom type
+- **Real-time Updates**: Changes reflect immediately after creation/deletion
+
+#### **Deleting Rooms**
+1. Find the room in the "Current Rooms" list
+2. Click the **red "Delete"** button next to the room
+3. Confirm deletion in the popup dialog
+4. Room is removed from the list
+
+### **2. Public Room Browsing**
+
+#### **Viewing Available Rooms**
+1. Navigate to `/rooms` in your browser
+2. Browse the grid of available room cards
+3. Each card shows:
+   - Room name and bed count
+   - Bathroom type (Private/Shared)
+   - Availability bar (next 7 days)
+   - Number of free beds
+
+#### **Understanding Availability**
+- **Progress Bar**: Blue bar shows booking percentage (40-60% mock data)
+- **Free Beds**: Calculated as: `total beds × (100 - booked percentage) ÷ 100`
+- **Booking Status**: Visual indicator of room availability
+
+### **3. Demo Mode Operation**
+
+#### **Preview Deployments**
+- **Demo Notice**: Yellow banner appears: "Demo mode: changes aren't persisted"
+- **Functionality**: All features work normally
+- **Persistence**: Changes don't save to database in preview environments
+- **Local Development**: Full persistence when running locally
+
+---
+
+## 🔧 **Advanced Operations**
+
+### **Database Management**
+
+#### **Database Schema**
+```sql
+-- Core tables
+CREATE TABLE Property (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Room (
+  id TEXT PRIMARY KEY,
+  propertyId TEXT NOT NULL,
+  name TEXT NOT NULL,
+  bedsTotal INTEGER NOT NULL,
+  hasBathroom BOOLEAN DEFAULT FALSE,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (propertyId) REFERENCES Property(id)
+);
+```
+
+#### **Database Commands**
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Push schema to database
+npx prisma db push
+
+# View database
+npx prisma studio
+
+# Reset database (development only)
+npx prisma db push --force-reset
+```
+
+### **API Endpoints**
+
+#### **Room Management APIs**
+```javascript
+// Get all rooms
+GET /api/rooms
+
+// Create new room
+POST /api/rooms
+{
+  "propertyId": "property-uuid",
+  "name": "6-Bed Mixed Dorm",
+  "bedsTotal": 6,
+  "hasBathroom": false
+}
+
+// Delete room
+DELETE /api/rooms/{roomId}
+```
+
+#### **Property APIs**
+```javascript
+// Get all properties
+GET /api/properties
+
+// Get single property
+GET /api/properties/{propertyId}
+```
+
+### **Testing the APIs**
+
+```bash
+# Test room creation
+curl -X POST http://localhost:3000/api/rooms \
+  -H "Content-Type: application/json" \
+  -d '{
+    "propertyId": "your-property-id",
+    "name": "Test Room",
+    "bedsTotal": 4,
+    "hasBathroom": true
+  }'
+
+# Test room listing
+curl http://localhost:3000/api/rooms
+
+# Test room deletion
+curl -X DELETE http://localhost:3000/api/rooms/{room-id}
+```
+
+---
+
+## 🚀 **Deployment Operations**
+
+### **Vercel Deployment**
+
+#### **Environment Variables**
+```env
+DATABASE_URL="file:./dev.db"
+NEXTAUTH_SECRET="your-nextauth-secret"
+NEXTAUTH_URL="https://your-app.vercel.app"
+```
+
+#### **Build Configuration**
+- **Build Command**: `prisma generate && next build`
+- **Install Command**: `npm ci`
+- **Node Version**: 18.x
+
+#### **Post-Deployment Setup**
+1. **Database**: Schema auto-creates on first deploy
+2. **Demo Mode**: Automatically enabled in preview deployments
+3. **Admin Access**: Create admin user via database or API
+
+### **Local Development**
+
+#### **Development Workflow**
+```bash
+# Start development server
+npm run dev
+
+# View at http://localhost:3000
+
+# Make changes to code
+# Changes auto-reload in browser
+
+# Test admin interface at /admin
+# Test public interface at /rooms
+```
+
+#### **Database Development**
+```bash
+# View database content
+npx prisma studio
+
+# Reset and seed database
+npx prisma db push --force-reset
+npx prisma db seed
+```
+
+---
+
+## 🐛 **Troubleshooting**
+
+### **Common Issues**
+
+#### **Rooms Not Appearing**
+- **Check**: Database connection and schema
+- **Fix**: Run `npx prisma db push` to ensure schema is applied
+- **Verify**: Check browser console for API errors
+
+#### **Form Not Submitting**
+- **Check**: Form validation (name length, bed count range)
+- **Fix**: Ensure all required fields are filled correctly
+- **Verify**: Check network tab for API request/response
+
+#### **Demo Mode Not Working**
+- **Check**: Environment variable `DEMO_READONLY=true`
+- **Fix**: Set environment variable for preview deployments
+- **Verify**: Look for yellow demo banner
+
+### **Debug Commands**
+
+```bash
+# Check database content
+npx prisma studio
+
+# View API responses
+curl http://localhost:3000/api/rooms
+
+# Check build status
+npm run build
+
+# View application logs
+npm run dev
+```
+
+---
+
+## 📈 **Next Steps & Roadmap**
+
+### **Immediate Improvements**
+1. **User Authentication**: Admin user registration and login
+2. **Multiple Properties**: Support for multiple hostels
+3. **Real Availability**: Replace mock data with actual booking system
+4. **Booking Flow**: Complete guest booking process
+
+### **Advanced Features**
+1. **Payment Integration**: Stripe/PayPal payment processing
+2. **Email Notifications**: Booking confirmations and updates
+3. **Review System**: Guest feedback and ratings
+4. **Calendar Integration**: Real-time availability calendar
+
+### **Production Readiness**
+1. **PostgreSQL Migration**: Production database setup
+2. **Security Audit**: Authentication and API security review
+3. **Performance Optimization**: Image optimization and caching
+4. **Monitoring**: Error tracking and analytics
+
+---
+
+This MVP provides a solid foundation for hostel room management with a clean, functional interface ready for real-world use and further development.
 
 ## 🚀 Deployment to Vercel
 
