@@ -1,11 +1,15 @@
+'use client'
+
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function SearchBar() {
   const [location, setLocation] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState(1);
+  const t = useTranslations('search');
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -18,12 +22,12 @@ export default function SearchBar() {
       <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="md:col-span-2">
           <label htmlFor="location" className="block text-sm font-medium text-neutral-text mb-1">
-            Location
+            {t('location')}
           </label>
           <input
             type="text"
             id="location"
-            placeholder="Where are you going?"
+            placeholder={t('locationPlaceholder')}
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             className="w-full px-3 py-2 border border-neutral-bg-muted rounded-md focus:outline-none focus:ring-2 focus:ring-brand-600 min-h-[44px]"
@@ -31,7 +35,7 @@ export default function SearchBar() {
         </div>
         <div>
           <label htmlFor="checkin" className="block text-sm font-medium text-neutral-text mb-1">
-            Check-in
+            {t('checkIn')}
           </label>
           <input
             type="date"
@@ -43,7 +47,7 @@ export default function SearchBar() {
         </div>
         <div>
           <label htmlFor="checkout" className="block text-sm font-medium text-neutral-text mb-1">
-            Check-out
+            {t('checkOut')}
           </label>
           <input
             type="date"
@@ -55,7 +59,7 @@ export default function SearchBar() {
         </div>
         <div>
           <label htmlFor="guests" className="block text-sm font-medium text-neutral-text mb-1">
-            Guests
+            {t('guests')}
           </label>
           <select
             id="guests"
@@ -64,7 +68,9 @@ export default function SearchBar() {
             className="w-full px-3 py-2 border border-neutral-bg-muted rounded-md focus:outline-none focus:ring-2 focus:ring-brand-600 min-h-[44px]"
           >
             {[1, 2, 3, 4, 5, 6].map(num => (
-              <option key={num} value={num}>{num} guest{num > 1 ? 's' : ''}</option>
+              <option key={num} value={num}>
+                {num} {num > 1 ? t('guestsPlural') : t('guest')}
+              </option>
             ))}
           </select>
         </div>
@@ -74,7 +80,7 @@ export default function SearchBar() {
               type="submit"
               className="bg-brand-600 text-white px-8 py-3 rounded-md hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 transition-colors duration-200 min-h-[44px]"
             >
-              Search Hostels
+              {t('searchHostels')}
             </button>
           </Link>
         </div>

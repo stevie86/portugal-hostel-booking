@@ -31,6 +31,9 @@
 - **prisma**: ORM for database management
 - **tailwindcss**: Utility-first CSS framework
 - **next-intl**: Internationalization for Next.js
+- **nodemailer**: Email sending library
+- **handlebars**: Template engine for emails
+- **@types/nodemailer**: TypeScript types for nodemailer
 
 ## Tool Usage Patterns
 - **Component Development**: Use Tailwind CSS for styling

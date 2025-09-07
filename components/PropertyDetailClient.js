@@ -1,29 +1,28 @@
-import React from 'react';
-import { useRouter } from 'next/router';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
-import { lisbonHostels } from '../../lib/mockData';
+'use client';
 
-export default function PropertyDetails() {
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import Header from './Header';
+import Footer from './Footer';
+
+export default function PropertyDetailClient({ hostel }) {
   const router = useRouter();
-  const { id } = router.query;
+  const t = useTranslations();
 
-  const hostel = lisbonHostels.find(h => h.id === parseInt(id));
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const [guests, setGuests] = useState(1);
 
-  if (!hostel) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Property Not Found</h1>
-            <p className="text-gray-600">The hostel you're looking for doesn't exist.</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  const handleBooking = () => {
+    // Navigate to booking page with parameters
+    const params = new URLSearchParams({
+      checkIn,
+      checkOut,
+      guests: guests.toString()
+    });
+    router.push(`/booking/${hostel.id}?${params}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,7 +68,7 @@ export default function PropertyDetails() {
 
             {/* Amenities */}
             <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-3">Amenities</h2>
+              <h2 className="text-xl font-semibold mb-3">{t('dashboard.amenities')}</h2>
               <div className="flex flex-wrap gap-2">
                 {hostel.amenities.map((amenity, index) => (
                   <span key={index} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
@@ -81,18 +80,21 @@ export default function PropertyDetails() {
 
             {/* Rooms */}
             <div>
-              <h2 className="text-xl font-semibold mb-3">Available Rooms</h2>
+              <h2 className="text-xl font-semibold mb-3">{t('dashboard.availability')}</h2>
               <div className="space-y-4">
                 {hostel.rooms.map((room, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <h3 className="font-semibold">{room.type} Room</h3>
-                        <p className="text-gray-600">{room.beds} bed{room.beds > 1 ? 's' : ''}</p>
+                        <h3 className="font-semibold">{room.type} {t('dashboard.roomType')}</h3>
+                        <p className="text-gray-600">{room.beds} {room.beds === 1 ? t('booking.bed') : t('booking.beds')}</p>
+                        <p className="text-sm text-gray-500">
+                          {t('booking.bathroom')}: {room.bathroom === 'private' ? t('booking.private') : t('booking.shared')}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-blue-600">€{room.price}</p>
-                        <p className="text-sm text-gray-600">per night</p>
+                        <p className="text-sm text-gray-600">{t('booking.perNight')}</p>
                       </div>
                     </div>
                   </div>
@@ -104,35 +106,51 @@ export default function PropertyDetails() {
           {/* Booking Card */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-              <h2 className="text-xl font-semibold mb-4">Book Your Stay</h2>
+              <h2 className="text-xl font-semibold mb-4">{t('booking.bookYourStay')}</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Check-in</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('search.checkIn')}
+                  </label>
                   <input
                     type="date"
+                    value={checkIn}
+                    onChange={(e) => setCheckIn(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Check-out</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('search.checkOut')}
+                  </label>
                   <input
                     type="date"
+                    value={checkOut}
+                    onChange={(e) => setCheckOut(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Guests</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('search.guests')}
+                  </label>
+                  <select
+                    value={guests}
+                    onChange={(e) => setGuests(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
                     {[1, 2, 3, 4, 5, 6].map(num => (
-                      <option key={num} value={num}>{num} guest{num > 1 ? 's' : ''}</option>
+                      <option key={num} value={num}>
+                        {num} {num === 1 ? t('search.guest') : t('search.guestsPlural')}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <button
-                  onClick={() => router.push(`/booking/${hostel.id}`)}
+                  onClick={handleBooking}
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
                 >
-                  Request Booking
+                  {t('booking.requestBooking')}
                 </button>
               </div>
             </div>

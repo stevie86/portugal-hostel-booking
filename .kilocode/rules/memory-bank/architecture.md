@@ -5,7 +5,8 @@
 - **Backend**: Next.js API routes (App Router)
 - **Database**: SQLite (development) with migration path to PostgreSQL (production)
 - **Authentication**: To be implemented (likely NextAuth.js or similar)
-- **Payment Processing**: To be integrated (Stripe or similar for booking payments)
+- **Payment Processing**: Integrated with multi-provider support (Stripe, MB WAY, Multibanco)
+- **Notification System**: Email and SMS notifications with templated messages and delivery tracking
 - **File Storage**: For property images (Cloudinary, AWS S3, or similar)
 - **Internationalization**: next-intl for multi-language support
 
@@ -37,6 +38,14 @@
 - **Button**: Basic interactive element (to be updated for Tailwind)
 - **ClickCount**: Example component (demo, to be replaced)
 - **Home**: Main page component (to be replaced with booking platform)
+
+## Notification Service Architecture
+- **Email Service**: Templated email notifications using Handlebars templates
+- **SMS Service**: Extensible SMS notification support (Twilio integration ready)
+- **Channel Architecture**: Pluggable notification channels for future expansion
+- **Delivery Tracking**: Comprehensive email delivery logging and status tracking
+- **Error Handling**: Retry logic and graceful failure handling for notifications
+- **Integration**: Automatic notifications triggered by booking and payment events
 
 ## Critical Implementation Paths
 1. **Database Setup**: Prisma with SQLite, schema for users, properties, bookings with location data
