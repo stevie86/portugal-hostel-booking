@@ -1,66 +1,53 @@
-import React from 'react'
-import { prisma } from '../lib/prisma'
+import React from 'react';
+import Link from 'next/link';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import SearchBar from '../components/SearchBar';
+import PropertyCard from '../components/PropertyCard';
+import { lisbonHostels } from '../lib/mockData';
 
-export default async function Home() {
-  const property = await prisma.property.findFirst()
-  const rooms = property ? await prisma.room.findMany({
-    where: { propertyId: property.id },
-    include: { bookings: true }
-  }) : []
-
-  const today = new Date()
-  const tomorrow = new Date(today)
-  tomorrow.setDate(today.getDate() + 1)
-
-  const getAvailability = (roomId: string) => {
-    const room = rooms.find(r => r.id === roomId)
-    if (!room) return 0
-
-    const bookedToday = room.bookings.filter(b =>
-      b.checkIn <= today && b.checkOut > today
-    ).length
-
-    return room.bedsTotal - bookedToday
-  }
+export default function Home() {
+  const featuredHostels = lisbonHostels.slice(0, 3);
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Hostel Availability</h1>
+    <div className="min-h-screen">
+      <Header />
 
-        {property ? (
-          <div>
-            <h2 className="text-xl mb-4">{property.name}</h2>
+      <main>
+        {/* Hero Section */}
+        <section className="bg-gradient-to-r from-brand-50 to-teal-50 py-16">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Find Your Perfect Hostel in Lisbon
+            </h1>
+            <p className="text-xl text-gray-600 mb-8">
+              Fair, local, hostel-first bookings — no hidden fees.
+            </p>
+            <SearchBar />
+          </div>
+        </section>
 
-            {rooms.length > 0 ? (
-              <div className="space-y-4">
-                {rooms.map(room => (
-                  <div key={room.id} className="border p-4 rounded">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-semibold">{room.name}</h3>
-                        <p className="text-sm text-gray-600">
-                          {getAvailability(room.id)} / {room.bedsTotal} beds available
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm">Today: {today.toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p>No rooms configured.</p>
-            )}
+        {/* Featured Properties */}
+        <section className="py-16">
+          <div className="max-w-6xl mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12">Featured Hostels</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredHostels.map((hostel) => (
+                <PropertyCard key={hostel.id} hostel={hostel} />
+              ))}
+            </div>
+            <div className="text-center mt-8">
+              <Link href="/properties">
+                <button className="bg-brand-600 text-white px-6 py-3 rounded-md hover:bg-brand-700">
+                  View All Properties
+                </button>
+              </Link>
+            </div>
           </div>
-        ) : (
-          <div className="text-center">
-            <p className="text-gray-500 mb-4">No property configured yet.</p>
-            <a href="/admin" className="text-blue-600 underline">Go to Admin</a>
-          </div>
-        )}
-      </div>
+        </section>
+      </main>
+
+      <Footer />
     </div>
-  )
+  );
 }

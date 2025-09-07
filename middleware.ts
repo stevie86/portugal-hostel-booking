@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import createIntlMiddleware from 'next-intl/middleware'
 import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
@@ -47,17 +46,6 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = getTokenFromRequest(request)
   const isAuthenticated = token && verifyToken(token)
-
-  // Handle internationalization first
-  const intlMiddleware = createIntlMiddleware({
-    locales: ['en', 'de', 'pt'],
-    defaultLocale: 'en'
-  })
-
-  const intlResponse = intlMiddleware(request)
-  if (intlResponse) {
-    return intlResponse
-  }
 
   // Protect dashboard routes
   if (isProtectedRoute(pathname)) {

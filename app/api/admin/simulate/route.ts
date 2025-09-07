@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     await prisma.booking.deleteMany()
 
     // Generate random bookings
-    const bookings: { roomId: string; checkIn: Date; checkOut: Date }[] = []
+    const bookings: { roomId: string; date: Date; bedsBooked: number }[] = []
 
     for (const room of rooms) {
       const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
@@ -29,18 +29,15 @@ export async function POST(request: NextRequest) {
         const date = new Date(start)
         date.setDate(start.getDate() + i)
 
-        // Randomly decide if this bed is booked based on occupancy percentage
-        const isBooked = Math.random() < (occupancyPercentage / 100)
+        // Randomly decide how many beds are booked (0 to room.bedsTotal)
+        const maxBedsToBook = Math.min(room.bedsTotal, Math.ceil(room.bedsTotal * (occupancyPercentage / 100)))
+        const bedsBooked = Math.floor(Math.random() * (maxBedsToBook + 1))
 
-        if (isBooked) {
-          const checkIn = new Date(date)
-          const checkOut = new Date(date)
-          checkOut.setDate(checkOut.getDate() + 1) // 1-night stay
-
+        if (bedsBooked > 0) {
           bookings.push({
             roomId: room.id,
-            checkIn,
-            checkOut,
+            date,
+            bedsBooked,
           })
         }
       }

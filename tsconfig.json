@@ -30,6 +30,12 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "lib/services/booking/**/*",
+    "lib/services/identity/**/*",
+    "lib/services/localization/**/*",
+    "lib/services/notification/**/*",
+    "lib/services/payment/**/*",
+    "lib/services/property/**/*"
   ]
 }

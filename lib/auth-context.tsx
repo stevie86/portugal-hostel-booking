@@ -2,7 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import Cookies from 'js-cookie';
-import { User } from './services/identity/types';
+
+// Simple User type for MVP demo
+interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}
 
 interface AuthContextType {
   user: User | null;

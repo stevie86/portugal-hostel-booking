@@ -1,53 +1,22 @@
-'use client'
-
 import React from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
 
 export default function Footer() {
-  const t = useTranslations('footer');
-
   return (
-    <footer className="bg-brand-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">{t('brand')}</h3>
-            <p className="text-neutral-text-muted">
-              {t('description')}
-            </p>
+    <footer className="bg-gray-800 text-white py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-4">Lisbon Hostel Booking</h3>
+          <p className="text-gray-300 mb-4">
+            Fair, local, hostel-first bookings in Lisbon — no hidden fees.
+          </p>
+          <div className="flex justify-center space-x-6 mb-4">
+            <Link href="/" className="text-gray-300 hover:text-white">Home</Link>
+            <Link href="/properties" className="text-gray-300 hover:text-white">Properties</Link>
+            <Link href="/about" className="text-gray-300 hover:text-white">About</Link>
           </div>
-          <div>
-            <h4 className="text-md font-semibold mb-4 text-white">{t('quickLinks')}</h4>
-            <ul className="space-y-2">
-              <li><Link href="/" className="text-neutral-text-muted hover:text-white transition-colors">{t('home')}</Link></li>
-              <li><Link href="/properties" className="text-neutral-text-muted hover:text-white transition-colors">{t('properties')}</Link></li>
-              <li><Link href="/about" className="text-neutral-text-muted hover:text-white transition-colors">{t('about')}</Link></li>
-              <li><Link href="/contact" className="text-neutral-text-muted hover:text-white transition-colors">{t('contact')}</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-md font-semibold mb-4 text-white">{t('destinations')}</h4>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-neutral-text-muted hover:text-white transition-colors">{t('lisbon')}</a></li>
-              <li><a href="#" className="text-neutral-text-muted hover:text-white transition-colors">{t('porto')}</a></li>
-              <li><a href="#" className="text-neutral-text-muted hover:text-white transition-colors">{t('algarve')}</a></li>
-              <li><a href="#" className="text-neutral-text-muted hover:text-white transition-colors">{t('coimbra')}</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-md font-semibold mb-4 text-white">{t('support')}</h4>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-neutral-text-muted hover:text-white transition-colors">{t('helpCenter')}</a></li>
-              <li><a href="#" className="text-neutral-text-muted hover:text-white transition-colors">{t('termsOfService')}</a></li>
-              <li><a href="#" className="text-neutral-text-muted hover:text-white transition-colors">{t('privacyPolicy')}</a></li>
-              <li><a href="#" className="text-neutral-text-muted hover:text-white transition-colors">{t('faq')}</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="border-t border-brand-800 mt-8 pt-8 text-center">
-          <p className="text-neutral-text-muted">
-            {t('copyright')}
+          <p className="text-gray-400 text-sm">
+            © 2025 Lisbon Hostel Booking. All rights reserved.
           </p>
         </div>
       </div>
