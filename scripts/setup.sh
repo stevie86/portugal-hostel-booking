@@ -58,11 +58,13 @@ print_success "npm version: $(npm -v)"
 # Step 1: Install dependencies
 print_status "Step 1: Installing dependencies..."
 if [ -f "package-lock.json" ]; then
-    npm ci
+    npm ci 2>&1 | grep -v "npm WARN deprecated"
 else
-    npm install
+    npm install 2>&1 | grep -v "npm WARN deprecated"
 fi
 print_success "Dependencies installed successfully"
+print_warning "Note: Some deprecation warnings may appear but don't affect functionality"
+print_status "Tip: Run 'npm audit fix' to update vulnerable packages if needed"
 
 # Step 2: Check environment variables
 print_status "Step 2: Checking environment variables..."

@@ -47,13 +47,30 @@ For the fastest setup experience, use our convenience script:
 ```
 
 This script will:
-- ✅ Install all dependencies
+- ✅ Install all dependencies (with deprecation warnings filtered)
 - ✅ Set up environment variables
 - ✅ Generate Prisma client
 - ✅ Create and migrate database
 - ✅ Seed with sample data
 - ✅ Run build verification
 - ✅ Provide next steps
+
+### **Handling Deprecation Warnings**
+
+During installation, you may see some deprecation warnings. These are normal and don't affect functionality:
+
+```bash
+# To analyze and fix deprecation warnings (optional)
+./scripts/fix-deprecations.sh
+
+# To update vulnerable packages
+npm audit fix
+
+# To update all packages to latest compatible versions
+npm update
+```
+
+**Most deprecation warnings are from transitive dependencies** and are managed by the package maintainers. They don't require immediate action unless they cause build failures.
 
 ### **Manual Setup (Alternative)**
 
@@ -303,6 +320,17 @@ npx prisma db seed
 - **Check**: Environment variable `DEMO_READONLY=true`
 - **Fix**: Set environment variable for preview deployments
 - **Verify**: Look for yellow demo banner
+
+#### **Deprecation Warnings During Installation**
+- **Cause**: Some packages in the dependency tree are deprecated
+- **Impact**: Warnings only, don't affect functionality
+- **Fix**: Run `./scripts/fix-deprecations.sh` for analysis
+- **Alternative**: These warnings are normal and can be ignored
+
+#### **Build Fails Due to Deprecated Packages**
+- **Check**: `npm run build` error messages
+- **Fix**: Update problematic packages or use `--legacy-peer-deps`
+- **Prevention**: Keep dependencies updated with `npm update`
 
 ### **Debug Commands**
 
