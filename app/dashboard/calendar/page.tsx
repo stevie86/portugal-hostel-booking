@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+
+// Force dynamic rendering for admin pages
+export const dynamic = 'force-dynamic';
 
 interface Property {
   id: string;
@@ -15,7 +17,6 @@ interface Room {
 }
 
 export default function CalendarPage() {
-  const t = useTranslations('dashboard');
   const [properties, setProperties] = useState<Property[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedProperty, setSelectedProperty] = useState('');
@@ -115,7 +116,7 @@ export default function CalendarPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-neutral-text">{t('calendar')}</h1>
+        <h1 className="text-3xl font-bold text-neutral-text">Calendar</h1>
         <p className="mt-2 text-neutral-text-muted">
           Manage availability and pricing for your rooms
         </p>

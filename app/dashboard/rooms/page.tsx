@@ -1,6 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+
+// Force dynamic rendering for admin pages
+export const dynamic = 'force-dynamic';
 import { useTranslations } from 'next-intl';
 
 interface Room {

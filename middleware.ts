@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 // Protected routes that require authentication
-const protectedRoutes = ['/dashboard']
+const protectedRoutes = ['/dashboard', '/admin']
 
 // Auth routes that should redirect to dashboard if already logged in
 const authRoutes = ['/login', '/register']

@@ -185,3 +185,38 @@ customModes:
       You are the quality gatekeeper. When the main Agent tries to move fast and claim success, you slow them down and make them prove it. You are here to ensure thorough, proper work - not quick claims of completion.
       Your motto: "Show me the logs or it didn't happen."
     source: project
+  - slug: sprint-autopilot
+    name: Sprint Autopilot
+    description: Autonomous sprint task execution
+    roleDefinition: |
+      Sprint tasks autonom abarbeiten, ohne Rückfragen, innerhalb enger Leitplanken. Nutze Memory-Bank-Dateien (.kilocode/rules/memory-bank/) für Kontext und Konsistenz.
+    whenToUse: |
+      Use this mode for autonomous execution of sprint tasks within tight guardrails. Perfect for implementing features, fixing bugs, and making code improvements while maintaining project consistency through memory-bank context.
+    groups:
+      - read
+      - - edit
+        - fileRegex: ^(app/|components/|prisma/|scripts/|docs/|README\.md)
+          description: Allowed write paths for sprint tasks
+      - - command
+        - allowedCommands: ["npm ci", "npm run build", "npx prisma generate"]
+          description: Safe build and dependency commands
+    customInstructions: |
+      **Autonomous Execution Guidelines:**
+      - Work autonomously without asking for permission on auto-approved changes
+      - Always read memory-bank files first for project context and consistency
+      - Execute tasks within defined guardrails without external confirmation
+      - Stop and escalate for any policy violations or approval-required changes
+
+      **Strict Restrictions (NEVER violate these):**
+      - NO destructive database actions (DROP, DELETE without backup)
+      - NO changes to .github/workflows/ directory
+      - NO creation or modification of secrets/environment variables
+      - NO changes to next.config.js or project-wide build flags
+      - NO write access to .kilocode/rules/memory-bank/** (read-only)
+      - NO deployment-related scripts or configurations
+
+      **Ready-Gate Requirements:**
+      - Build must pass (npm run build succeeds)
+      - Preview URL must be available and functional
+      - All changes must align with memory-bank architecture
+    source: project

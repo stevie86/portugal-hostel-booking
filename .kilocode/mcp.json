@@ -10,8 +10,10 @@
         "DEFAULT_MINIMUM_TOKENS": ""
       },
       "alwaysAllow": [
-        "resolve-library-id"
-      ]
+        "resolve-library-id",
+        "get-library-docs"
+      ],
+      "disabled": false
     },
     "filesystem": {
       "command": "npx",
@@ -44,6 +46,9 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-puppeteer"
+      ],
+      "alwaysAllow": [
+        "puppeteer_navigate"
       ]
     },
     "memory": {
@@ -51,6 +56,16 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-memory"
+      ],
+      "alwaysAllow": [
+        "create_entities",
+        "create_relations",
+        "add_observations",
+        "delete_entities",
+        "delete_observations",
+        "read_graph",
+        "open_nodes",
+        "search_nodes"
       ]
     }
   }

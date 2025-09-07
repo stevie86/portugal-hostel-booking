@@ -1,0 +1,295 @@
+name: Sprint Automation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sprints/**/*.md'
+  workflow_dispatch:
+    inputs:
+      sprint_file:
+        description: 'Path to sprint MD file (e.g., sprints/holiday-week.md)'
+        required: true
+        default: 'sprints/holiday-week.md'
+      create_branch:
+        description: 'Create sprint branch automatically'
+        type: boolean
+        default: true
+
+jobs:
+  parse-sprint:
+    runs-on: ubuntu-latest
+    outputs:
+      sprint-name: ${{ steps.parse.outputs.sprint_name }}
+      sprint-goal: ${{ steps.parse.outputs.sprint_goal }}
+      tasks-json: ${{ steps.parse.outputs.tasks_json }}
+      branch-name: ${{ steps.parse.outputs.branch_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Parse sprint MD file
+        id: parse
+        run: |
+          SPRINT_FILE="${{ github.event.inputs.sprint_file || 'sprints/holiday-week.md' }}"
+
+          if [ ! -f "$SPRINT_FILE" ]; then
+            echo "Sprint file not found: $SPRINT_FILE"
+            exit 1
+          fi
+
+          # Extract sprint name from filename
+          SPRINT_NAME=$(basename "$SPRINT_FILE" .md)
+          echo "sprint_name=$SPRINT_NAME" >> $GITHUB_OUTPUT
+
+          # Extract sprint goal (first line after title)
+          SPRINT_GOAL=$(head -n 10 "$SPRINT_FILE" | grep -E "^Goal|^ZIEL" | head -1 | sed 's/Goal://' | sed 's/ZIEL://' | xargs)
+          if [ -z "$SPRINT_GOAL" ]; then
+            SPRINT_GOAL=$(head -n 5 "$SPRINT_FILE" | head -1 | xargs)
+          fi
+          echo "sprint_goal=$SPRINT_GOAL" >> $GITHUB_OUTPUT
+
+          # Extract tasks as JSON
+          TASKS_JSON=$(awk '
+            /^Tasks/ { in_tasks=1; next }
+            /^---/ { if (in_tasks) exit }
+            in_tasks && /^-?\s*\[ \]/ {
+              task = substr($0, index($0, "]") + 2)
+              if (task != "") {
+                if (first) printf ",";
+                printf "{\"task\":\"%s\",\"status\":\"pending\"}", task;
+                first=1;
+              }
+            }
+          ' "$SPRINT_FILE" | sed 's/"/\\"/g')
+
+          echo "tasks_json=[$TASKS_JSON]" >> $GITHUB_OUTPUT
+
+          # Generate branch name
+          BRANCH_NAME="sprint-${SPRINT_NAME}-$(date +%Y%m%d)"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+  create-sprint-branch:
+    needs: parse-sprint
+    runs-on: ubuntu-latest
+    if: github.event.inputs.create_branch != 'false'
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Create sprint branch
+        run: |
+          BRANCH_NAME="${{ needs.parse-sprint.outputs.branch-name }}"
+          git checkout -b "$BRANCH_NAME"
+          git push -u origin "$BRANCH_NAME"
+
+      - name: Create sprint progress file
+        run: |
+          BRANCH_NAME="${{ needs.parse-sprint.outputs.branch-name }}"
+          SPRINT_NAME="${{ needs.parse-sprint.outputs.sprint-name }}"
+
+          mkdir -p "sprints/$SPRINT_NAME"
+          cat > "sprints/$SPRINT_NAME/progress.md" << EOF
+          # Sprint: $SPRINT_NAME
+          **Branch:** $BRANCH_NAME
+          **Started:** $(date)
+          **Goal:** ${{ needs.parse-sprint.outputs.sprint_goal }}
+
+          ## Progress Tracking
+
+          ### Sprint Tasks
+          $(echo '${{ needs.parse-sprint.outputs.tasks-json }}' | jq -r '.[] | "- [ ] \(.task)"')
+
+          ### Definition of Done
+          - [ ] All tasks completed
+          - [ ] Build passes (npm run build)
+          - [ ] Preview deployment successful
+          - [ ] Core pages accessible
+          - [ ] README updated
+          - [ ] Memory-bank context updated
+
+          ## Commit History
+          <!-- Will be populated during sprint execution -->
+
+          ## Issues & Blockers
+          <!-- Document any issues encountered -->
+          EOF
+
+      - name: Commit sprint setup
+        run: |
+          git add .
+          git commit -m "chore: initialize sprint $SPRINT_NAME
+
+          - Create sprint branch: ${{ needs.parse-sprint.outputs.branch-name }}
+          - Set up progress tracking
+          - Parse tasks from sprint specification
+
+          Sprint goal: ${{ needs.parse-sprint.outputs.sprint_goal }}"
+
+          git push
+
+  initialize-sprint-autopilot:
+    needs: [parse-sprint, create-sprint-branch]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sprint branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.parse-sprint.outputs.branch-name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Sprint Autopilot mode
+        run: |
+          if [ ! -f ".kilocodemodes" ]; then
+            echo "❌ Missing .kilocodemodes file"
+            exit 1
+          fi
+
+          if ! grep -q "sprint-autopilot" .kilocodemodes; then
+            echo "❌ Sprint Autopilot mode not configured"
+            exit 1
+          fi
+
+          echo "✅ Sprint Autopilot mode ready"
+
+      - name: Validate memory-bank
+        run: |
+          REQUIRED_FILES=(
+            ".kilocode/rules/memory-bank/architecture.md"
+            ".kilocode/rules/memory-bank/context.md"
+            ".kilocode/rules/memory-bank/tech.md"
+          )
+
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing memory-bank file: $file"
+              exit 1
+            fi
+          done
+
+          echo "✅ Memory-bank files present"
+
+      - name: Check governance policies
+        run: |
+          if [ ! -f ".kilocode/rules/auto-approval.md" ]; then
+            echo "❌ Missing auto-approval policy"
+            exit 1
+          fi
+
+          if [ ! -f ".kilocode/rules/escalation.md" ]; then
+            echo "❌ Missing escalation procedures"
+            exit 1
+          fi
+
+          echo "✅ Governance policies configured"
+
+      - name: Update sprint progress
+        run: |
+          SPRINT_NAME="${{ needs.parse-sprint.outputs.sprint-name }}"
+          PROGRESS_FILE="sprints/$SPRINT_NAME/progress.md"
+
+          # Add initialization status
+          sed -i 's/### Sprint Tasks/### Sprint Tasks\n\n#### ✅ Sprint Initialized\n- [x] Branch created\n- [x] Progress tracking set up\n- [x] Dependencies installed\n- [x] Sprint Autopilot mode verified\n- [x] Memory-bank validated\n- [x] Governance policies confirmed\n/' "$PROGRESS_FILE"
+
+      - name: Commit initialization
+        run: |
+          git add .
+          git commit -m "chore: complete sprint initialization
+
+          - Verify Sprint Autopilot mode configuration
+          - Validate memory-bank files
+          - Confirm governance policies
+          - Update progress tracking
+
+          Ready for task execution"
+
+          git push
+
+  create-sprint-issue:
+    needs: [parse-sprint, initialize-sprint-autopilot]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create sprint tracking issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sprintName = '${{ needs.parse-sprint.outputs.sprint-name }}';
+            const branchName = '${{ needs.parse-sprint.outputs.branch-name }}';
+            const sprintGoal = '${{ needs.parse-sprint.outputs.sprint_goal }}';
+
+            const body = `
+            ## 🚀 Sprint: ${sprintName}
+
+            **Branch:** \`${branchName}\`
+            **Started:** ${new Date().toISOString().split('T')[0]}
+            **Goal:** ${sprintGoal}
+
+            ### Sprint Status
+            - [x] Branch created
+            - [x] Sprint Autopilot initialized
+            - [x] Governance checks passed
+            - [ ] Tasks in progress
+            - [ ] Quality gates passed
+            - [ ] Ready for main merge
+
+            ### Progress Tracking
+            View detailed progress: [\`sprints/${sprintName}/progress.md\`](sprints/${sprintName}/progress.md)
+
+            ### Next Steps
+            1. Switch to Sprint Autopilot mode
+            2. Execute tasks from sprint specification
+            3. Run quality gate checks
+            4. Create pull request to main
+
+            ---
+            *This issue tracks the ${sprintName} sprint progress.*
+            `;
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Sprint: ${sprintName}`,
+              body: body,
+              labels: ['sprint', 'sprint-autopilot', 'in-progress']
+            });
+
+            // Comment with branch info
+            await github.rest.issues.createComment({
+              issue_number: issue.data.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🏃‍♂️ Sprint branch created: \`${branchName}\`\n\nStart working on this branch to execute the sprint tasks.`
+            });
+
+  notify-sprint-ready:
+    needs: [parse-sprint, create-sprint-issue]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Sprint initialization summary
+        run: |
+          echo "🎯 Sprint '${{ needs.parse-sprint.outputs.sprint-name }}' initialized successfully!"
+          echo "📋 Tracking issue created"
+          echo "🌿 Branch: ${{ needs.parse-sprint.outputs.branch-name }}"
+          echo "🎯 Goal: ${{ needs.parse-sprint.outputs.sprint_goal }}"
+          echo ""
+          echo "Next steps:"
+          echo "1. Switch to Sprint Autopilot mode"
+          echo "2. Execute tasks from sprint specification"
+          echo "3. Monitor progress in the tracking issue"
+          echo "4. Create PR when sprint is complete"
