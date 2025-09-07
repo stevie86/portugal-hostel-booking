@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Minimal MVP Schema for Portugal Hostel Booking Demo
+// Simplified for demo purposes - single property, rooms, and bookings
 
 generator client {
   provider = "prisma-client-js"
@@ -10,477 +10,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Multi-tenant base model
-model Tenant {
-  id        String   @id @default(cuid())
-  name      String
-  domain    String?  @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// Minimal MVP Models for Demo
 
-  // Relations
-  users         User[]
-  properties    Property[]
-  rooms         Room[]
-  bookings      Booking[]
-  payments      Payment[]
-  notifications Notification[]
-  emailLogs     EmailLog[]
-  auditLogs     AuditLog[]
-
-  @@map("tenants")
-}
-
-// Identity Service
-model User {
-  id        String   @id @default(cuid())
-  tenantId  String
-  email     String
-  password  String
-  firstName String?
-  lastName  String?
-  role      UserRole @default(GUEST)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  // Relations
-  properties    Property[] // As host
-  bookings      Booking[]
-  payments      Payment[]
-  notifications Notification[]
-
-  @@unique([email, tenantId])
-  @@index([tenantId])
-  @@map("users")
-}
-
-enum UserRole {
-  ADMIN
-  HOST
-  GUEST
-}
-
-// Localization Service
-model Country {
-  id   String @id @default(cuid())
-  name String @unique
-  code String @unique // ISO code
-
-  regions Region[]
-
-  @@map("countries")
-}
-
-model Region {
-  id        String @id @default(cuid())
-  name      String
-  countryId String
-
-  country Country @relation(fields: [countryId], references: [id])
-  cities  City[]
-
-  @@index([countryId])
-  @@map("regions")
-}
-
-model City {
-  id       String @id @default(cuid())
-  name     String
-  regionId String
-
-  region    Region     @relation(fields: [regionId], references: [id])
-  locations Location[]
-
-  @@index([regionId])
-  @@map("cities")
-}
-
-model Location {
-  id          String  @id @default(cuid())
-  address     String
-  postalCode  String?
-  latitude    Float?
-  longitude   Float?
-  cityId      String
-
-  city       City        @relation(fields: [cityId], references: [id])
-  properties Property[]
-
-  @@index([cityId])
-  @@map("locations")
-}
-
-// Property Service
 model Property {
   id          String   @id @default(cuid())
-  tenantId    String
   name        String
-  description String?
-  locationId  String
-  hostId      String   // User ID of the host
-  isActive    Boolean  @default(true)
-  metadata    Json?    // For extensibility
+  city        String?
+  metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  location Location  @relation(fields: [locationId], references: [id])
-  host     User      @relation(fields: [hostId], references: [id])
-
-  // Relations
-  rooms         Room[]
-  amenities     PropertyAmenity[]
-
-  @@index([tenantId])
-  @@index([locationId])
-  @@index([hostId])
-  @@map("properties")
-}
-
-model Amenity {
-  id   String @id @default(cuid())
-  name String @unique
-
-  properties PropertyAmenity[]
-  rooms      RoomAmenity[]
-
-  @@map("amenities")
-}
-
-model PropertyAmenity {
-  id         String @id @default(cuid())
-  propertyId String
-  amenityId  String
-
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  amenity  Amenity  @relation(fields: [amenityId], references: [id])
-
-  @@unique([propertyId, amenityId])
-  @@index([propertyId])
-  @@index([amenityId])
-  @@map("property_amenities")
-}
-
-// Inventory Service
-model RoomType {
-  id          String  @id @default(cuid())
-  name        String
-  description String?
-  capacity    Int     // Max occupants
-  bedsTotal   Int
-
   rooms Room[]
 
-  @@map("room_types")
+  @@map("properties")
 }
 
 model Room {
   id          String   @id @default(cuid())
-  tenantId    String
   propertyId  String
-  roomTypeId  String
   name        String
-  floor       Int?
-  isActive    Boolean  @default(true)
-  metadata    Json?    // For extensibility
+  bedsTotal   Int
+  hasBathroom Boolean  @default(false)
+  metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property  Property       @relation(fields: [propertyId], references: [id])
-  roomType  RoomType       @relation(fields: [roomTypeId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  bookings Booking[]
 
-  // Relations
-  amenities     RoomAmenity[]
-  bookings      Booking[]
-  pricePlans    PricePlan[]
-
-  @@index([tenantId])
   @@index([propertyId])
-  @@index([roomTypeId])
   @@map("rooms")
 }
 
-model RoomAmenity {
-  id        String @id @default(cuid())
-  roomId    String
-  amenityId String
-
-  room    Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  amenity Amenity @relation(fields: [amenityId], references: [id])
-
-  @@unique([roomId, amenityId])
-  @@index([roomId])
-  @@index([amenityId])
-  @@map("room_amenities")
-}
-
-// Pricing Service
-model PricePlan {
-  id          String    @id @default(cuid())
-  roomId      String
-  name        String
-  basePrice   Float
-  currency    String    @default("EUR")
-  isActive    Boolean   @default(true)
-  validFrom   DateTime?
-  validTo     DateTime?
-  metadata    Json?     // For extensibility
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  room Room @relation(fields: [roomId], references: [id])
-
-  // Relations
-  seasonalRates SeasonalRate[]
-  discounts     Discount[]
-
-  @@index([roomId])
-  @@map("price_plans")
-}
-
-model SeasonalRate {
-  id           String   @id @default(cuid())
-  pricePlanId  String
-  name         String
-  multiplier   Float    // e.g., 1.2 for 20% increase
-  startDate    DateTime
-  endDate      DateTime
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  pricePlan PricePlan @relation(fields: [pricePlanId], references: [id], onDelete: Cascade)
-
-  @@index([pricePlanId])
-  @@map("seasonal_rates")
-}
-
-model Discount {
-  id          String   @id @default(cuid())
-  pricePlanId String
-  code        String   @unique
-  description String?
-  type        DiscountType
-  value       Float    // Percentage or fixed amount
-  minStay     Int?     // Minimum nights
-  maxUses     Int?
-  usedCount   Int      @default(0)
-  validFrom   DateTime
-  validTo     DateTime
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  pricePlan PricePlan @relation(fields: [pricePlanId], references: [id], onDelete: Cascade)
-
-  @@index([pricePlanId])
-  @@index([code])
-  @@map("discounts")
-}
-
-enum DiscountType {
-  PERCENTAGE
-  FIXED
-}
-
-// Booking Service
 model Booking {
-  id            String       @id @default(cuid())
-  tenantId      String
-  userId        String
-  roomId        String
-  checkIn       DateTime
-  checkOut      DateTime
-  guests        Int
-  totalAmount   Float
-  currency      String       @default("EUR")
-  status        BookingStatus @default(PENDING)
-  specialRequests String?
-  metadata      Json?        // For extensibility
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id])
-  room   Room   @relation(fields: [roomId], references: [id])
-
-  // Relations
-  payments      Payment[]
-  notifications Notification[]
-  emailLogs     EmailLog[]
-
-  @@index([tenantId])
-  @@index([userId])
-  @@index([roomId])
-  @@index([checkIn])
-  @@index([checkOut])
-  @@index([status])
-  @@map("bookings")
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-}
-
-// Payment Service
-model PaymentMethod {
-  id     String @id @default(cuid())
-  name   String
-  type   PaymentType
-
-  payments Payment[]
-
-  @@map("payment_methods")
-}
-
-enum PaymentType {
-  CREDIT_CARD
-  DEBIT_CARD
-  PAYPAL
-  BANK_TRANSFER
-  MB_WAY
-  MULTIBANCO
-}
-
-model Payment {
-  id              String        @id @default(cuid())
-  tenantId        String
-  bookingId       String
-  userId          String
-  amount          Float
-  currency        String        @default("EUR")
-  paymentMethodId String
-  status          PaymentStatus @default(PENDING)
-  transactionId   String?       @unique
-  metadata        Json?         // For extensibility
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  booking       Booking       @relation(fields: [bookingId], references: [id])
-  user          User          @relation(fields: [userId], references: [id])
-  paymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id])
-
-  @@index([tenantId])
-  @@index([bookingId])
-  @@index([userId])
-  @@index([status])
-  @@map("payments")
-}
-
-enum PaymentStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
-// Notification Service
-model NotificationType {
-  id   String @id @default(cuid())
-  name String @unique
-
-  notifications Notification[]
-
-  @@map("notification_types")
-}
-
-model Notification {
-  id          String   @id @default(cuid())
-  tenantId    String
-  userId      String
-  bookingId   String?
-  typeId      String
-  title       String
-  message     String
-  isRead      Boolean  @default(false)
-  metadata    Json?    // For extensibility
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user     User             @relation(fields: [userId], references: [id])
-  booking  Booking?         @relation(fields: [bookingId], references: [id])
-  type     NotificationType @relation(fields: [typeId], references: [id])
-
-  @@index([tenantId])
-  @@index([userId])
-  @@index([bookingId])
-  @@index([typeId])
-  @@index([isRead])
-  @@map("notifications")
-}
-
-model EmailLog {
-  id            String         @id @default(cuid())
-  tenantId      String
-  recipient     String
-  subject       String
-  template      String         // Template name used
-  bookingId     String?
-  status        EmailStatus    @default(PENDING)
-  provider      String?        // Email provider used (e.g., 'smtp', 'sendgrid')
-  messageId     String?        // Provider's message ID
-  errorMessage  String?
-  retryCount    Int            @default(0)
-  maxRetries    Int            @default(3)
-  sentAt        DateTime?
-  deliveredAt   DateTime?
-  metadata      Json?          // For extensibility
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  booking Booking? @relation(fields: [bookingId], references: [id])
-
-  @@index([tenantId])
-  @@index([recipient])
-  @@index([bookingId])
-  @@index([status])
-  @@index([sentAt])
-  @@map("email_logs")
-}
-
-enum EmailStatus {
-  PENDING
-  SENT
-  DELIVERED
-  FAILED
-  BOUNCED
-}
-
-// Audit Trails
-model AuditLog {
   id        String   @id @default(cuid())
-  tenantId  String
-  userId    String?
-  tableName String
-  recordId  String
-  action    AuditAction
-  oldData   Json?
-  newData   Json?
-  timestamp DateTime @default(now())
+  roomId    String
+  date      DateTime
+  bedsBooked Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId])
-  @@index([userId])
-  @@index([tableName])
-  @@index([recordId])
-  @@index([timestamp])
-  @@map("audit_logs")
-}
-
-enum AuditAction {
-  CREATE
-  UPDATE
-  DELETE
+  @@index([roomId])
+  @@index([date])
+  @@map("bookings")
 }

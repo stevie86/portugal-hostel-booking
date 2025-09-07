@@ -1,48 +1,35 @@
-export interface RoomType {
-  id: string;
-  name: string;
-  description?: string;
-  capacity: number;
-  bedsTotal: number;
-}
-
 export interface Room {
   id: string;
-  tenantId: string;
   propertyId: string;
-  roomTypeId: string;
   name: string;
+  bedsTotal: number;
+  hasBathroom: boolean;
+  // Extra fields from schema (ignored in MVP)
+  tenantId?: string;
+  roomTypeId?: string;
   floor?: number;
-  isActive: boolean;
+  isActive?: boolean;
   metadata?: any;
-  createdAt: Date;
-  updatedAt: Date;
-  roomType?: RoomType;
-  amenities?: RoomAmenity[];
-}
-
-export interface RoomAmenity {
-  id: string;
-  roomId: string;
-  amenityId: string;
-  amenity?: Amenity;
-}
-
-export interface Amenity {
-  id: string;
-  name: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface CreateRoomRequest {
   propertyId: string;
-  roomTypeId: string;
   name: string;
-  floor?: number;
+  bedsTotal: number;
+  hasBathroom: boolean;
+  // Extra fields (ignored in MVP)
   tenantId?: string;
+  roomTypeId?: string;
+  floor?: number;
 }
 
 export interface UpdateRoomRequest {
   name?: string;
+  bedsTotal?: number;
+  hasBathroom?: boolean;
+  // Extra fields (ignored in MVP)
   floor?: number;
   isActive?: boolean;
 }

@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 import { InventoryService } from '../../../../lib/services/inventory/service';
 
+// Check if we're in demo mode (Vercel preview or DEMO_READONLY env var)
+const isDemoMode = () => {
+  return process.env.VERCEL_ENV === 'preview' ||
+         process.env.DEMO_READONLY === 'true' ||
+         process.env.VERCEL_URL?.includes('vercel-preview');
+};
+
 export async function GET(request, { params }) {
   try {
     const { id } = params;
 
-    // For now, return a mock room - in real implementation, you'd fetch by ID
     const rooms = await InventoryService.getRooms();
     const room = rooms.find(r => r.id === id);
 
@@ -18,7 +24,8 @@ export async function GET(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      data: room
+      data: room,
+      ...(isDemoMode() && { demo: true })
     });
   } catch (error) {
     return NextResponse.json({
@@ -33,8 +40,17 @@ export async function PUT(request, { params }) {
     const { id } = params;
     const body = await request.json();
 
-    // Mock update - in real implementation, you'd update the room
-    const updatedRoom = { id, ...body };
+    if (isDemoMode()) {
+      // In demo mode, return success without persisting
+      return NextResponse.json({
+        success: true,
+        data: { id, ...body },
+        demo: true,
+        message: 'Demo mode: changes are not persisted'
+      });
+    }
+
+    const updatedRoom = await InventoryService.updateRoom(id, body);
 
     return NextResponse.json({
       success: true,
@@ -52,7 +68,17 @@ export async function DELETE(request, { params }) {
   try {
     const { id } = params;
 
-    // Mock delete - in real implementation, you'd delete the room
+    if (isDemoMode()) {
+      // In demo mode, return success without persisting
+      return NextResponse.json({
+        success: true,
+        message: 'Room deleted successfully (demo mode)',
+        demo: true
+      });
+    }
+
+    await InventoryService.deleteRoom(id);
+
     return NextResponse.json({
       success: true,
       message: 'Room deleted successfully'

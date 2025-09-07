@@ -3,38 +3,38 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  // Create a sample property
+  // Create Lisbon Starter Hostel
   const property = await prisma.property.upsert({
-    where: { id: 'sample-property' },
+    where: { id: 'lisbon-starter-hostel' },
     update: {},
     create: {
-      id: 'sample-property',
-      name: 'Sample Lisbon Hostel',
+      id: 'lisbon-starter-hostel',
+      name: 'Lisbon Starter Hostel',
+      city: 'Lisbon',
     },
   })
 
-  // Create sample rooms
+  // Create sample rooms: 1 dorm + 1 private
   const rooms = [
-    { name: 'Dorm Room A', bedsTotal: 6 },
-    { name: 'Dorm Room B', bedsTotal: 8 },
-    { name: 'Private Room 1', bedsTotal: 2 },
-    { name: 'Private Room 2', bedsTotal: 4 },
+    { name: '6-Bed Mixed Dorm', bedsTotal: 6, hasBathroom: false },
+    { name: 'Private Double Room', bedsTotal: 2, hasBathroom: true },
   ]
 
   for (const room of rooms) {
     await prisma.room.upsert({
-      where: { id: `${room.name.toLowerCase().replace(/\s+/g, '-')}` },
+      where: { id: `${room.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}` },
       update: {},
       create: {
-        id: `${room.name.toLowerCase().replace(/\s+/g, '-')}`,
+        id: `${room.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`,
         name: room.name,
         bedsTotal: room.bedsTotal,
+        hasBathroom: room.hasBathroom,
         propertyId: property.id,
       },
     })
   }
 
-  console.log('Database seeded successfully')
+  console.log('Database seeded successfully with Lisbon Starter Hostel')
 }
 
 main()
