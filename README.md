@@ -37,7 +37,25 @@ A **minimal viable product (MVP)** for a hostel booking platform focused on Port
 
 ## 🚀 **Operating the Application**
 
-### **Quick Start Guide**
+### **One-Command Setup (Recommended)**
+
+For the fastest setup experience, use our convenience script:
+
+```bash
+# Complete automated setup
+./scripts/setup.sh
+```
+
+This script will:
+- ✅ Install all dependencies
+- ✅ Set up environment variables
+- ✅ Generate Prisma client
+- ✅ Create and migrate database
+- ✅ Seed with sample data
+- ✅ Run build verification
+- ✅ Provide next steps
+
+### **Manual Setup (Alternative)**
 
 ```bash
 # 1. Install dependencies
@@ -55,11 +73,20 @@ Visit **http://localhost:3000** to access the application.
 
 ### **User Roles & Access**
 
+#### **Database Status Monitoring**
+The admin dashboard now includes a **Database Status** component that:
+- ✅ Checks database connection
+- ✅ Verifies schema migration status
+- ✅ Shows table information
+- ✅ Provides one-click migration if needed
+- ⚠️ Alerts if database setup is incomplete
+
 #### **For Hostel Owners (Admin)**
 1. **Access Admin Interface**: Navigate to `/admin`
-2. **Create Rooms**: Use the room creation form to add new room types
-3. **Manage Inventory**: View all rooms and delete unwanted ones
-4. **Monitor Availability**: Check room availability status
+2. **Check Database Status**: Ensure everything is properly set up
+3. **Create Rooms**: Use the room creation form to add new room types
+4. **Manage Inventory**: View all rooms and delete unwanted ones
+5. **Monitor Availability**: Check room availability status
 
 #### **For Guests (Public)**
 1. **Browse Rooms**: Visit `/rooms` to see available room types
