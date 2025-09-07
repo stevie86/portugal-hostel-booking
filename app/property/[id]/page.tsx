@@ -1,6 +1,5 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import PropertyDetailClient from '../../../components/PropertyDetailClient';
 import { lisbonHostels } from '../../../lib/mockData';
 
@@ -11,7 +10,6 @@ interface PropertyPageProps {
 }
 
 export default function PropertyPage({ params }: PropertyPageProps) {
-  const t = useTranslations();
   const hostel = lisbonHostels.find(h => h.id === parseInt(params.id));
 
   if (!hostel) {

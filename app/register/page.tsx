@@ -3,11 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useAuth } from '../../lib/auth-context';
 
 export default function RegisterPage() {
-  const t = useTranslations('dashboard');
   const router = useRouter();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
@@ -62,12 +60,12 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-neutral-text">
-            {t('register')}
+            Register
           </h2>
           <p className="mt-2 text-center text-sm text-neutral-text-muted">
             Already have an account?{' '}
             <Link href="/login" className="font-medium text-brand-600 hover:text-brand-500">
-              {t('login')}
+              login
             </Link>
           </p>
         </div>
@@ -149,7 +147,7 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Creating account...' : t('register')}
+              {isLoading ? 'Creating account...' : 'Register'}
             </button>
           </div>
         </form>
