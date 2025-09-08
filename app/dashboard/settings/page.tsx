@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useState } from 'react';
-import { useTranslations } from 'next-intl';
+
+// Force dynamic rendering for admin pages
+export const dynamic = 'force-dynamic';
 
 export default function SettingsPage() {
-  const t = useTranslations('dashboard');
   const [profile, setProfile] = useState({
     firstName: 'John',
     lastName: 'Doe',
@@ -31,7 +32,7 @@ export default function SettingsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-neutral-text">{t('settings')}</h1>
+        <h1 className="text-3xl font-bold text-neutral-text">Settings</h1>
         <p className="mt-2 text-neutral-text-muted">
           Manage your account settings and preferences
         </p>
@@ -39,7 +40,7 @@ export default function SettingsPage() {
 
       {/* Profile Settings */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-neutral-text mb-6">{t('profile')}</h2>
+        <h2 className="text-xl font-semibold text-neutral-text mb-6">Profile</h2>
         <form onSubmit={handleProfileUpdate} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

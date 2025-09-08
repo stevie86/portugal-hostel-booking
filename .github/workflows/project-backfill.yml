@@ -1,0 +1,199 @@
+name: Project Backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: 'Number of days to look back for issues/PRs'
+        required: false
+        default: '30'
+        type: string
+      dry_run:
+        description: 'Run in dry-run mode (log only, no changes)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  projects: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Backfill Project Items
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PROJECT_TOKEN }}
+          script: |
+            const dryRun = ${{ inputs.dry_run || false }};
+            const daysBack = parseInt('${{ inputs.days_back }}') || 30;
+            const projectId = process.env.PROJECT_ID;
+
+            if (!projectId) {
+              console.log('PROJECT_ID not set, skipping backfill');
+              return;
+            }
+
+            const log = (message) => {
+              console.log(`[${dryRun ? 'DRY-RUN' : 'LIVE'}] ${message}`);
+            };
+
+            // Calculate date threshold
+            const since = new Date();
+            since.setDate(since.getDate() - daysBack);
+            const sinceISO = since.toISOString();
+
+            log(`Backfilling items since ${sinceISO}`);
+
+            // Get issues
+            let issues = [];
+            let cursor = null;
+            let hasNextPage = true;
+
+            while (hasNextPage) {
+              const query = `
+                query($owner: String!, $repo: String!, $since: DateTime!, $cursor: String) {
+                  repository(owner: $owner, repo: $repo) {
+                    issues(first: 100, after: $cursor, since: $since, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                      nodes {
+                        id
+                        number
+                        title
+                        createdAt
+                        updatedAt
+                        closed
+                        labels(first: 10) {
+                          nodes {
+                            name
+                          }
+                        }
+                      }
+                      pageInfo {
+                        hasNextPage
+                        endCursor
+                      }
+                    }
+                  }
+                }
+              `;
+
+              const variables = {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                since: sinceISO,
+                cursor: cursor
+              };
+
+              const result = await github.graphql(query, variables);
+              issues = issues.concat(result.repository.issues.nodes);
+              hasNextPage = result.repository.issues.pageInfo.hasNextPage;
+              cursor = result.repository.issues.pageInfo.endCursor;
+            }
+
+            // Get PRs
+            let prs = [];
+            cursor = null;
+            hasNextPage = true;
+
+            while (hasNextPage) {
+              const query = `
+                query($owner: String!, $repo: String!, $since: DateTime!, $cursor: String) {
+                  repository(owner: $owner, repo: $repo) {
+                    pullRequests(first: 100, after: $cursor, since: $since, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                      nodes {
+                        id
+                        number
+                        title
+                        createdAt
+                        updatedAt
+                        merged
+                        closed
+                        labels(first: 10) {
+                          nodes {
+                            name
+                          }
+                        }
+                      }
+                      pageInfo {
+                        hasNextPage
+                        endCursor
+                      }
+                    }
+                  }
+                }
+              `;
+
+              const variables = {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                since: sinceISO,
+                cursor: cursor
+              };
+
+              const result = await github.graphql(query, variables);
+              prs = prs.concat(result.repository.pullRequests.nodes);
+              hasNextPage = result.repository.pullRequests.pageInfo.hasNextPage;
+              cursor = result.repository.pullRequests.pageInfo.endCursor;
+            }
+
+            log(`Found ${issues.length} issues and ${prs.length} PRs to process`);
+
+            // Process items (reuse sync logic from project-sync.yml)
+            const processItem = async (item, type) => {
+              try {
+                // Add to project logic here (similar to sync workflow)
+                const addToProjectQuery = `
+                  mutation($projectId: ID!, $contentId: ID!) {
+                    addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                      item {
+                        id
+                      }
+                    }
+                  }
+                `;
+
+                const variables = { projectId, contentId: item.id };
+
+                if (!dryRun) {
+                  const result = await github.graphql(addToProjectQuery, variables);
+                  log(`Added ${type} #${item.number} to project`);
+                  return result.addProjectV2ItemById.item.id;
+                } else {
+                  log(`Would add ${type} #${item.number} to project`);
+                  return 'dry-run-item-id';
+                }
+              } catch (error) {
+                if (error.message.includes('ITEM_ALREADY_EXISTS')) {
+                  log(`${type} #${item.number} already in project`);
+                  return null; // Already exists, skip
+                }
+                log(`Error adding ${type} #${item.number}: ${error.message}`);
+                return null;
+              }
+            };
+
+            // Process all items
+            for (const issue of issues) {
+              await processItem(issue, 'Issue');
+            }
+
+            for (const pr of prs) {
+              await processItem(pr, 'PR');
+            }
+
+            log('Backfill completed');
+
+      - name: Summary
+        run: |
+          echo "## Backfill Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Processed issues: ${{ steps.backfill.outputs.issue_count || 0 }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Processed PRs: ${{ steps.backfill.outputs.pr_count || 0 }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Days back: ${{ inputs.days_back }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Mode: ${{ inputs.dry_run && 'Dry-run' || 'Live' }}" >> $GITHUB_STEP_SUMMARY

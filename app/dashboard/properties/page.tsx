@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+
+// Force dynamic rendering for admin pages
+export const dynamic = 'force-dynamic';
 
 interface Property {
   id: string;
@@ -19,7 +21,6 @@ interface Property {
 }
 
 export default function PropertiesPage() {
-  const t = useTranslations('dashboard');
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -87,7 +88,7 @@ export default function PropertiesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('deleteProperty') + '?')) return;
+    if (!confirm('Delete property?')) return;
 
     try {
       const response = await fetch(`/api/properties/${id}`, {
@@ -111,7 +112,7 @@ export default function PropertiesPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-neutral-text-muted">{t('common.loading')}</div>
+        <div className="text-neutral-text-muted">Loading...</div>
       </div>
     );
   }
@@ -121,7 +122,7 @@ export default function PropertiesPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-text">{t('properties')}</h1>
+          <h1 className="text-3xl font-bold text-neutral-text">Properties</h1>
           <p className="mt-2 text-neutral-text-muted">
             Manage your hostel properties
           </p>
@@ -130,7 +131,7 @@ export default function PropertiesPage() {
           onClick={() => setShowForm(true)}
           className="bg-brand-600 text-white px-4 py-2 rounded-md hover:bg-brand-700 transition-colors duration-200"
         >
-          {t('addProperty')}
+          Add Property
         </button>
       </div>
 
@@ -151,20 +152,20 @@ export default function PropertiesPage() {
                     onClick={() => handleEdit(property)}
                     className="text-brand-600 hover:text-brand-700 text-sm"
                   >
-                    {t('editProperty')}
+                    Edit
                   </button>
                   <button
                     onClick={() => handleDelete(property.id)}
                     className="text-red-600 hover:text-red-700 text-sm"
                   >
-                    {t('deleteProperty')}
+                    Delete
                   </button>
                 </div>
               </div>
               <p className="text-neutral-text-muted mb-4">{property.description}</p>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-neutral-text-muted">
-                  {property.rooms?.length || 0} {t('rooms')}
+                  {property.rooms?.length || 0} rooms
                 </span>
               </div>
             </div>
@@ -172,12 +173,12 @@ export default function PropertiesPage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-neutral-text-muted mb-4">{t('noProperties')}</p>
+          <p className="text-neutral-text-muted mb-4">No properties found</p>
           <button
             onClick={() => setShowForm(true)}
             className="bg-brand-600 text-white px-6 py-3 rounded-md hover:bg-brand-700 transition-colors duration-200"
           >
-            {t('addYourFirstProperty')}
+            Add Your First Property
           </button>
         </div>
       )}
@@ -187,12 +188,12 @@ export default function PropertiesPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <h2 className="text-2xl font-bold mb-4">
-              {editingProperty ? t('editProperty') : t('addProperty')}
+              {editingProperty ? 'Edit Property' : 'Add Property'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-text mb-1">
-                  {t('propertyName')}
+                  Property Name
                 </label>
                 <input
                   type="text"
@@ -204,7 +205,7 @@ export default function PropertiesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-text mb-1">
-                  {t('description')}
+                  Description
                 </label>
                 <textarea
                   value={formData.description}
@@ -218,14 +219,14 @@ export default function PropertiesPage() {
                   type="submit"
                   className="bg-brand-600 text-white px-4 py-2 rounded-md hover:bg-brand-700 transition-colors duration-200"
                 >
-                  {t('save')}
+                  Save
                 </button>
                 <button
                   type="button"
                   onClick={resetForm}
                   className="bg-neutral-bg text-neutral-text px-4 py-2 rounded-md hover:bg-neutral-bg-muted transition-colors duration-200"
                 >
-                  {t('cancel')}
+                  Cancel
                 </button>
               </div>
             </form>

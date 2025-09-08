@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+
+// Force dynamic rendering for admin pages
+export const dynamic = 'force-dynamic';
 
 interface Booking {
   id: string;
@@ -16,7 +18,6 @@ interface Booking {
 }
 
 export default function BookingsPage() {
-  const t = useTranslations('dashboard');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'confirmed' | 'pending' | 'cancelled'>('all');
@@ -94,7 +95,7 @@ export default function BookingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-neutral-text-muted">{t('common.loading')}</div>
+        <div className="text-neutral-text-muted">Loading...</div>
       </div>
     );
   }
@@ -104,7 +105,7 @@ export default function BookingsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-text">{t('bookings')}</h1>
+          <h1 className="text-3xl font-bold text-neutral-text">Bookings</h1>
           <p className="mt-2 text-neutral-text-muted">
             Manage your booking requests and reservations
           </p>
@@ -132,7 +133,7 @@ export default function BookingsPage() {
                 : 'bg-neutral-bg text-neutral-text hover:bg-neutral-bg-muted'
             }`}
           >
-            {t('confirmed')} ({bookings.filter(b => b.status === 'confirmed').length})
+            Confirmed ({bookings.filter(b => b.status === 'confirmed').length})
           </button>
           <button
             onClick={() => setFilter('pending')}
@@ -142,7 +143,7 @@ export default function BookingsPage() {
                 : 'bg-neutral-bg text-neutral-text hover:bg-neutral-bg-muted'
             }`}
           >
-            {t('pending')} ({bookings.filter(b => b.status === 'pending').length})
+            Pending ({bookings.filter(b => b.status === 'pending').length})
           </button>
           <button
             onClick={() => setFilter('cancelled')}
@@ -152,7 +153,7 @@ export default function BookingsPage() {
                 : 'bg-neutral-bg text-neutral-text hover:bg-neutral-bg-muted'
             }`}
           >
-            {t('cancelled')} ({bookings.filter(b => b.status === 'cancelled').length})
+            Cancelled ({bookings.filter(b => b.status === 'cancelled').length})
           </button>
         </div>
       </div>
@@ -161,7 +162,7 @@ export default function BookingsPage() {
       {filteredBookings.length > 0 ? (
         <div className="bg-white rounded-lg shadow-md">
           <div className="px-6 py-4 border-b border-neutral-bg-muted">
-            <h2 className="text-xl font-semibold text-neutral-text">{t('bookingList')}</h2>
+            <h2 className="text-xl font-semibold text-neutral-text">Booking List</h2>
           </div>
           <div className="divide-y divide-neutral-bg-muted">
             {filteredBookings.map((booking) => (
@@ -183,13 +184,13 @@ export default function BookingsPage() {
                   <div className="text-right">
                     <div className="flex items-center space-x-4">
                       <div>
-                        <p className="text-sm text-neutral-text-muted">{t('checkIn')}: {booking.checkIn}</p>
-                        <p className="text-sm text-neutral-text-muted">{t('checkOut')}: {booking.checkOut}</p>
+                        <p className="text-sm text-neutral-text-muted">Check-in: {booking.checkIn}</p>
+                        <p className="text-sm text-neutral-text-muted">Check-out: {booking.checkOut}</p>
                         <p className="text-lg font-semibold text-neutral-text">€{booking.total}</p>
                       </div>
                       <div className="flex flex-col space-y-2">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(booking.status)}`}>
-                          {t(booking.status)}
+                          {booking.status}
                         </span>
                         {booking.status === 'pending' && (
                           <div className="flex space-x-1">
@@ -217,7 +218,7 @@ export default function BookingsPage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-neutral-text-muted mb-4">{t('noBookings')}</p>
+          <p className="text-neutral-text-muted mb-4">No bookings found</p>
         </div>
       )}
     </div>

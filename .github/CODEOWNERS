@@ -1,0 +1,9 @@
+# Protect automation workflows and critical files
+.github/workflows/ @your-team
+scripts/project-*.md @your-team
+docs/github-projects.md @your-team
+docs/boards-usage.md @your-team
+docs/reuse-in-new-repo.md @your-team
+
+# Global protection for workflow changes
+.github/ @your-team

@@ -2,14 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import Header from './Header';
 import Footer from './Footer';
 import { lisbonHostels } from '../lib/mockData';
 
 export default function BookingConfirmationClient({ bookingId }) {
   const router = useRouter();
-  const t = useTranslations();
   const [bookingData, setBookingData] = useState(null);
   const [hostel, setHostel] = useState(null);
 
@@ -58,37 +56,37 @@ export default function BookingConfirmationClient({ bookingId }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('booking.bookingConfirmed')}</h1>
-          <p className="text-gray-600">{t('booking.bookingSubmitted')}</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Booking Confirmed!</h1>
+          <p className="text-gray-600">Your booking has been submitted successfully.</p>
         </div>
 
         {/* Booking Details Card */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">{t('booking.bookingDetails')}</h2>
+            <h2 className="text-xl font-semibold">Booking Details</h2>
             <span className="text-sm text-gray-500">ID: {bookingId}</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Guest Information */}
             <div>
-              <h3 className="font-medium text-gray-900 mb-3">{t('booking.guestInfo')}</h3>
+              <h3 className="font-medium text-gray-900 mb-3">Guest Information</h3>
               <div className="space-y-2 text-sm">
-                <p><span className="font-medium">{t('booking.name')}:</span> {bookingData.firstName} {bookingData.lastName}</p>
-                <p><span className="font-medium">{t('booking.email')}:</span> {bookingData.email}</p>
-                {bookingData.phone && <p><span className="font-medium">{t('booking.phone')}:</span> {bookingData.phone}</p>}
-                <p><span className="font-medium">{t('search.guests')}:</span> {bookingData.guests}</p>
+                <p><span className="font-medium">Name:</span> {bookingData.firstName} {bookingData.lastName}</p>
+                <p><span className="font-medium">Email:</span> {bookingData.email}</p>
+                {bookingData.phone && <p><span className="font-medium">Phone:</span> {bookingData.phone}</p>}
+                <p><span className="font-medium">Guests:</span> {bookingData.guests}</p>
               </div>
             </div>
 
             {/* Stay Details */}
             <div>
-              <h3 className="font-medium text-gray-900 mb-3">{t('booking.stayDetails')}</h3>
+              <h3 className="font-medium text-gray-900 mb-3">Stay Details</h3>
               <div className="space-y-2 text-sm">
-                <p><span className="font-medium">{t('search.checkIn')}:</span> {new Date(bookingData.checkIn).toLocaleDateString()}</p>
-                <p><span className="font-medium">{t('search.checkOut')}:</span> {new Date(bookingData.checkOut).toLocaleDateString()}</p>
-                <p><span className="font-medium">{t('booking.roomType')}:</span> {bookingData.roomType}</p>
-                <p><span className="font-medium">{t('booking.payment')}:</span> {paymentMethodNames[bookingData.paymentMethod]}</p>
+                <p><span className="font-medium">Check-in:</span> {new Date(bookingData.checkIn).toLocaleDateString()}</p>
+                <p><span className="font-medium">Check-out:</span> {new Date(bookingData.checkOut).toLocaleDateString()}</p>
+                <p><span className="font-medium">Room Type:</span> {bookingData.roomType}</p>
+                <p><span className="font-medium">Payment:</span> {paymentMethodNames[bookingData.paymentMethod]}</p>
               </div>
             </div>
           </div>
@@ -128,28 +126,28 @@ export default function BookingConfirmationClient({ bookingId }) {
 
         {/* Pricing Summary */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">{t('booking.pricingSummary')}</h3>
+          <h3 className="text-lg font-semibold mb-4">Pricing Summary</h3>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span>{t('booking.roomRate')}</span>
+              <span>Room Rate</span>
               <span>€{bookingData.total}</span>
             </div>
             <div className="flex justify-between font-semibold text-lg border-t pt-2">
-              <span>{t('booking.total')}</span>
+              <span>Total</span>
               <span className="text-blue-600">€{bookingData.total}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-2">{t('booking.noHiddenFees')}</p>
+            <p className="text-xs text-gray-500 mt-2">No hidden fees - what you see is what you pay</p>
           </div>
         </div>
 
         {/* Next Steps */}
         <div className="bg-blue-50 rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">{t('booking.whatHappensNext')}</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">What Happens Next?</h3>
           <div className="space-y-2 text-sm text-blue-800">
-            <p>1. {t('booking.nextSteps.1')}</p>
-            <p>2. {t('booking.nextSteps.2')}</p>
-            <p>3. {t('booking.nextSteps.3')} {paymentMethodNames[bookingData.paymentMethod]}</p>
-            <p>4. {t('booking.nextSteps.4')}</p>
+            <p>1. You'll receive a confirmation email with your booking details</p>
+            <p>2. The hostel will review and confirm your booking</p>
+            <p>3. Payment will be processed via {paymentMethodNames[bookingData.paymentMethod]}</p>
+            <p>4. You'll receive check-in instructions from the hostel</p>
           </div>
         </div>
 
@@ -159,13 +157,13 @@ export default function BookingConfirmationClient({ bookingId }) {
             onClick={() => router.push('/')}
             className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
           >
-            {t('booking.bookAnotherStay')}
+            Book Another Stay
           </button>
           <button
             onClick={() => router.push(`/property/${hostel.id}`)}
             className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
           >
-            {t('booking.viewProperty')}
+            View Property
           </button>
         </div>
       </main>
