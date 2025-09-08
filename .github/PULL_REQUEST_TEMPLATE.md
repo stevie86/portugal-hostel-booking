@@ -29,3 +29,10 @@
 
 ## Related Issues
 <!-- Link to related issues or PRs -->
+Closes #
+
+## Project Sync
+- [ ] IDs/Secrets configured (PROJECT_ID, FIELD_ID_*)
+- [ ] Expected status after merge: Done
+- [ ] CI must be green for merge
+- [ ] Project sync workflow expected to run

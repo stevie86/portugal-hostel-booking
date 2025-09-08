@@ -1,0 +1,302 @@
+name: Project Sync
+
+on:
+  issues:
+    types: [opened, labeled, reopened, closed]
+  pull_request:
+    types: [opened, synchronize, ready_for_review, closed]
+  workflow_run:
+    workflows: ["build", "test"]  # Adjust to your CI workflow names
+    types: [completed]
+  workflow_call:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (log only, no changes)'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      GH_PROJECT_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  projects: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Sync to Project
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PROJECT_TOKEN }}
+          script: |
+            const dryRun = ${{ inputs.dry_run || false }};
+            const projectId = process.env.PROJECT_ID;
+            const fieldIds = {
+              status: process.env.FIELD_ID_STATUS,
+              sprint: process.env.FIELD_ID_SPRINT,
+              priority: process.env.FIELD_ID_PRIORITY,
+              estimate: process.env.FIELD_ID_ESTIMATE,
+              type: process.env.FIELD_ID_TYPE
+            };
+
+            if (!projectId) {
+              console.log('PROJECT_ID not set, skipping sync');
+              return;
+            }
+
+            // Helper function to log actions
+            const log = (message) => {
+              console.log(`[${dryRun ? 'DRY-RUN' : 'LIVE'}] ${message}`);
+            };
+
+            // Helper function to add item to project
+            const addToProject = async (itemId, contentType) => {
+              try {
+                const query = `
+                  mutation($projectId: ID!, $contentId: ID!) {
+                    addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                      item {
+                        id
+                      }
+                    }
+                  }
+                `;
+                const variables = { projectId, contentId: itemId };
+
+                if (!dryRun) {
+                  const result = await github.graphql(query, variables);
+                  log(`Added ${contentType} ${itemId} to project`);
+                  return result.addProjectV2ItemById.item.id;
+                } else {
+                  log(`Would add ${contentType} ${itemId} to project`);
+                  return 'dry-run-item-id';
+                }
+              } catch (error) {
+                if (error.message.includes('ITEM_ALREADY_EXISTS')) {
+                  log(`${contentType} ${itemId} already in project`);
+                  // Get existing item ID
+                  const existingQuery = `
+                    query($projectId: ID!, $contentId: ID!) {
+                      node(id: $projectId) {
+                        ... on ProjectV2 {
+                          items(first: 1) {
+                            nodes {
+                              id
+                              content {
+                                ... on Issue {
+                                  id
+                                }
+                                ... on PullRequest {
+                                  id
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  `;
+                  const existingResult = await github.graphql(existingQuery, { projectId, contentId: itemId });
+                  return existingResult.node.items.nodes[0].id;
+                }
+                throw error;
+              }
+            };
+
+            // Helper function to update field
+            const updateField = async (itemId, fieldId, value) => {
+              try {
+                let mutation, variables;
+
+                if (typeof value === 'string') {
+                  mutation = `
+                    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                      updateProjectV2ItemFieldValue(input: {
+                        projectId: $projectId
+                        itemId: $itemId
+                        fieldId: $fieldId
+                        value: { text: $value }
+                      }) {
+                        projectV2Item {
+                          id
+                        }
+                      }
+                    }
+                  `;
+                  variables = { projectId, itemId, fieldId, value };
+                } else if (typeof value === 'number') {
+                  mutation = `
+                    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: Float!) {
+                      updateProjectV2ItemFieldValue(input: {
+                        projectId: $projectId
+                        itemId: $itemId
+                        fieldId: $fieldId
+                        value: { number: $value }
+                      }) {
+                        projectV2Item {
+                          id
+                        }
+                      }
+                    }
+                  `;
+                  variables = { projectId, itemId, fieldId, value };
+                } else if (Array.isArray(value)) {
+                  // Single select
+                  mutation = `
+                    mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: String!) {
+                      updateProjectV2ItemFieldValue(input: {
+                        projectId: $projectId
+                        itemId: $itemId
+                        fieldId: $fieldId
+                        value: { singleSelectOptionId: $value }
+                      }) {
+                        projectV2Item {
+                          id
+                        }
+                      }
+                    }
+                  `;
+                  variables = { projectId, itemId, fieldId, value: value[0] };
+                }
+
+                if (!dryRun) {
+                  await github.graphql(mutation, variables);
+                  log(`Updated field ${fieldId} to ${JSON.stringify(value)}`);
+                } else {
+                  log(`Would update field ${fieldId} to ${JSON.stringify(value)}`);
+                }
+              } catch (error) {
+                log(`Error updating field ${fieldId}: ${error.message}`);
+                throw error;
+              }
+            };
+
+            // Main sync logic
+            let itemId, contentType, itemNodeId;
+
+            if (context.payload.issue) {
+              itemId = context.payload.issue.node_id;
+              contentType = 'Issue';
+              itemNodeId = context.payload.issue.node_id;
+            } else if (context.payload.pull_request) {
+              itemId = context.payload.pull_request.node_id;
+              contentType = 'PullRequest';
+              itemNodeId = context.payload.pull_request.node_id;
+            } else {
+              log('No issue or PR in payload, skipping');
+              return;
+            }
+
+            // Add to project if not already there
+            const projectItemId = await addToProject(itemId, contentType);
+
+            // Determine status based on event
+            let status = 'Backlog';
+            if (context.eventName === 'issues') {
+              if (context.payload.action === 'opened') status = 'Backlog';
+              else if (context.payload.action === 'closed') status = 'Done';
+              else if (context.payload.action === 'reopened') status = 'Backlog';
+            } else if (context.eventName === 'pull_request') {
+              if (context.payload.action === 'opened' || context.payload.action === 'synchronize') {
+                status = 'In Progress';
+              } else if (context.payload.action === 'ready_for_review') {
+                status = 'Review';
+              } else if (context.payload.action === 'closed') {
+                status = context.payload.pull_request.merged ? 'Done' : 'Backlog';
+              }
+            } else if (context.eventName === 'workflow_run') {
+              // CI workflow completed
+              if (context.payload.workflow_run.conclusion === 'failure') {
+                status = 'Blocked';
+              }
+            }
+
+            // Check for blocked label
+            const labels = context.payload.issue?.labels || context.payload.pull_request?.labels || [];
+            const hasBlockedLabel = labels.some(label => label.name === 'blocked');
+            if (hasBlockedLabel) {
+              status = 'Blocked';
+            }
+
+            // Update status
+            if (fieldIds.status) {
+              const statusOptions = {
+                'Backlog': process.env.STATUS_BACKLOG_ID,
+                'Planned': process.env.STATUS_PLANNED_ID,
+                'In Progress': process.env.STATUS_IN_PROGRESS_ID,
+                'Review': process.env.STATUS_REVIEW_ID,
+                'Blocked': process.env.STATUS_BLOCKED_ID,
+                'Done': process.env.STATUS_DONE_ID
+              };
+              if (statusOptions[status]) {
+                await updateField(projectItemId, fieldIds.status, [statusOptions[status]]);
+              }
+            }
+
+            // Map labels to fields
+            const labelMappings = {
+              'type:feature': { field: 'type', value: 'Feature' },
+              'type:bug': { field: 'type', value: 'Bug' },
+              'type:chore': { field: 'type', value: 'Chore' },
+              'type:spec': { field: 'type', value: 'Spec' },
+              'priority:p0': { field: 'priority', value: 'P0' },
+              'priority:p1': { field: 'priority', value: 'P1' },
+              'priority:p2': { field: 'priority', value: 'P2' },
+              'priority:p3': { field: 'priority', value: 'P3' }
+            };
+
+            for (const label of labels) {
+              const mapping = labelMappings[label.name];
+              if (mapping && fieldIds[mapping.field]) {
+                const fieldValue = mapping.field === 'type' || mapping.field === 'priority' ?
+                  [process.env[`${mapping.field.toUpperCase()}_${mapping.value}_ID`]] : mapping.value;
+                await updateField(projectItemId, fieldIds[mapping.field], fieldValue);
+              }
+
+              // Handle sprint labels
+              if (label.name.startsWith('sprint:') && fieldIds.sprint) {
+                const sprintName = label.name.replace('sprint:', '');
+                await updateField(projectItemId, fieldIds.sprint, sprintName);
+              }
+            }
+
+            // Parse estimate from body
+            const body = context.payload.issue?.body || context.payload.pull_request?.body || '';
+            const estimateMatch = body.match(/Estimate:\s*(\d+)/i);
+            if (estimateMatch && fieldIds.estimate) {
+              const estimate = parseInt(estimateMatch[1]);
+              await updateField(projectItemId, fieldIds.estimate, estimate);
+            }
+
+            log(`Sync completed for ${contentType} ${context.payload.issue?.number || context.payload.pull_request?.number}`);
+
+      - name: Add failure label on error
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PROJECT_TOKEN }}
+          script: |
+            const issueNumber = context.payload.issue?.number || context.payload.pull_request?.number;
+            if (issueNumber) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                labels: ['sync:failed']
+              });
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: '❌ Project sync failed. Check workflow logs for details.'
+              });
+            }
